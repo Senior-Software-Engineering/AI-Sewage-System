@@ -30,7 +30,7 @@
     //     let index = this.$store.state.Treedata.chooseData
     //     let signalrUrl = window.equipmentobjarray[index]['box']['cs']['signalrUrl']
     //     let token = window.jsonobj['access_token']
-    //     this.$http.post('http://localhost:8081/equip/createSignalRConnect', {
+    //     this.$http.post('http://116.55.241.28:8082/equip/createSignalRConnect', {
     //       url: signalrUrl,
     //       token: token
     //     }, {
@@ -44,7 +44,7 @@
     //     })
     //   },
     //   closeSignalRConnect () {
-    //     this.$http.post('http://localhost:8081/equip/closeSignalRConnect', null, {
+    //     this.$http.post('http://116.55.241.28:8082/equip/closeSignalRConnect', null, {
     //       headers: {
     //         'Authorization': this.$store.state.ShiroToken.token
     //       }

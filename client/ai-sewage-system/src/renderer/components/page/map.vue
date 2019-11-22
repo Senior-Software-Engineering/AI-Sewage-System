@@ -1,5 +1,5 @@
 <template>
-    <baidu-map class="map" center="云南大学呈贡校区" :zoom="12" :scroll-wheel-zoom="true"
+    <baidu-map class="map" :center="center" :zoom="zoom" :scroll-wheel-zoom="true"
                @click="getPoint" @ready="handler" mapType="BMAP_HYBRID_MAP">
       <div v-for="pos in equipposarray" :key="pos.name">
         <bm-marker :position="{lng: pos.pos.longitude, lat: pos.pos.latitude}" @click="infoWindowCheck(pos)">
@@ -17,13 +17,19 @@
     name: 'vMap',
     data () {
       // 处理地图数据
+      let index = this.$store.state.Treedata.chooseData
       window.equipmentposarray = getEquipmentPosArray()
       return {
         equipposarray: window.equipmentposarray,
         defaultProps: {
           children: 'children',
           label: 'label'
-        }
+        },
+        center: {
+          lng: window.equipmentposarray[index]['pos']['longitude'],
+          lat: window.equipmentposarray[index]['pos']['longitude']
+        },
+        zoom: 12
       }
     },
     methods: {
@@ -78,9 +84,11 @@
         let ansTree = []
         for (let i = 0; i < originTree.length; i++) {
           for (let j = 0; j < originTree[i]['children'].length; j++) {
-            if (checkCityInArray(originTree[i]['children'][j].label, cityArray)) {
-              ansTree = insertCity(originTree[i]['label'], originTree[i]['children'][j]['label'],
-                originTree[i]['children'][j]['children'], ansTree)
+            for (let k = 0; k < originTree[i]['children'][j]['children'].length; k++) {
+              if (checkCityInArray(originTree[i]['children'][j]['children'][k].label, cityArray)) {
+                ansTree = insertCity(originTree[i]['label'], originTree[i]['children'][j]['label'],
+                  originTree[i]['children'][j]['children'][k], ansTree)
+              }
             }
           }
         }
@@ -138,12 +146,14 @@
       console.log('province: ' + matchaddr[0] + 'city: ' + matchaddr[1])
       treedataarray = insertMatchAddr(treedataarray, matchaddr, name, net, connect)
     }
+    // 将站点排序, 连接正常的站点优先排序
+    treedataarray = sortTree(treedataarray)
     return treedataarray
   }
 
-  /*
-  正常情况 matchaddr经过解析后应该长度为2代表省/市
-  其他情况下可以视为错误地址
+  /**
+   * @desc 正常情况 matchaddr经过解析后应该长度为2代表省/市
+           其他情况下可以视为错误地址
   */
   function insertMatchAddr (treedataarray, matchaddr, name, net, connect) {
     let province = matchaddr[0]
@@ -230,31 +240,67 @@
    * @desc 检测城市是否在有权限的城市列表中
    */
   function checkCityInArray (city, cityArray) {
-    for (let i = 0; i < cityArray.length; i++) {
-      if (city === cityArray[i]) {
-        return true
+    if (cityArray[0] === 'all') {
+      return true
+    } else {
+      for (let i = 0; i < cityArray.length; i++) {
+        if (city === cityArray[i]) {
+          return true
+        }
       }
+      return false
     }
-    return false
   }
 
   /**
-   * @desc 做权限城市的插值
+   * @desc 做权限城市的插值 细化到每个站点
    */
-  function insertCity (province, city, siteArray, ansTree) {
+  function insertCity (province, city, siteInfo, ansTree) {
+    // 检查省份是否存在
     let provinceIndex = -1
+    let cityIndex = -1
     for (let i = 0; i < ansTree.length; i++) {
       if (province === ansTree[i]['label']) {
         provinceIndex = i
       }
     }
-    if (provinceIndex !== -1) {
-      ansTree[provinceIndex]['children'].push({label: city, children: siteArray})
+    if (provinceIndex === -1) {
+      // 因为是第一次插入 直接插入整条地图路径
+      ansTree.push({label: province, children: [{label: city, children: [siteInfo]}]})
     } else {
-      // 不存在已有省份的情况下
-      ansTree.push({label: province, children: [{label: city, children: siteArray}]})
+      // 存在已有省份的情况下
+      // 检查所在城市是否存在
+      for (let i = 0; i < ansTree[provinceIndex]['children'].length; i++) {
+        if (city === ansTree[provinceIndex]['children'][i].label) {
+          cityIndex = i
+        }
+      }
+      if (cityIndex === -1) {
+        // 如果该城市不存在
+        ansTree[provinceIndex]['children'].push({label: city, children: [siteInfo]})
+      } else {
+        ansTree[provinceIndex]['children'][cityIndex]['children'].push(siteInfo)
+      }
     }
     return ansTree
+  }
+  /**
+   * @desc 对树节点按照是否连接优先级进行排序
+   */
+  function sortTree (tree) {
+    for (let i = 0; i < tree.length; i++) {
+      for (let j = 0; j < tree[i].children.length; j++) {
+        let siteList = tree[i].children[j].children
+        siteList.sort((a, b) => {
+          if (a.connectClass === 'el-icon-success' && b.connectClass === 'el-icon-warning-outline') {
+            return -1
+          } else {
+            return 1
+          }
+        })
+      }
+    }
+    return tree
   }
 </script>
 

@@ -54,6 +54,7 @@
     computed: {
       // 处理地图树形数据,分割出省市信息-迁移到地图初始化后返回对象初始化
       equiptreedata () {
+        console.log(this.$store.state.Treedata.treedata)
         return this.$store.state.Treedata.treedata
       }
     }

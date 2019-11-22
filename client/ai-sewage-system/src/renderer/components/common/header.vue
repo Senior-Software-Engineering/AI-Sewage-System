@@ -1,7 +1,6 @@
 <template>
   <el-row>
     <el-col :span="7">
-      <img :src="imgurl">
     </el-col>
     <el-col :span="12">
       <el-menu :router="true" :default-active="$route.path" class="el-menu" mode="horizontal" @select="handleSelect"
